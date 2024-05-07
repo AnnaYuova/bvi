@@ -1,0 +1,37 @@
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    ServerName backend1.example.com
+    DocumentRoot /var/www/tutorial
+
+    DirectoryIndex index.html
+
+    # Konfigurace proxy balanceru
+    <Proxy "balancer://samplecluster">
+        BalancerMember http://localhost:8001
+        BalancerMember http://localhost:8000
+    </Proxy>
+
+    <Location />
+        Options -Indexes
+        FallbackResource /index.html
+    </Location>
+
+    <Location /sample>
+        ProxyPass "balancer://samplecluster/"
+        ProxyPassReverse "balancer://samplecluster/"
+
+        RequestHeader set X-Real-IP %{REMOTE_ADDR}e
+        RequestHeader set X-Forwarded-For %{REMOTE_ADDR}e
+        RequestHeader set X-Forwarded-Proto https
+        RequestHeader set Host %{HTTP_HOST}e
+
+        ProxyPreserveHost On
+        ProxyErrorOverride Off
+        ProxyRequests Off
+        ProxyTimeout 60
+        ProxyBadHeader Ignore
+    </Location>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
